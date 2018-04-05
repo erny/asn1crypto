@@ -2576,7 +2576,10 @@ class ParsableOctetString(Constructable, Castable, Primitive):
         """
 
         if self._parsed is None or self._parsed[1:3] != (spec, spec_params):
-            parsed_value, _ = _parse_build(self.__bytes__(), spec=spec, spec_params=spec_params)
+            data = self.__bytes__()
+            if spec == OctetString and ord(data[0]) != 4:
+                data = self._header + data
+            parsed_value, _ = _parse_build(data, spec=spec, spec_params=spec_params)
             self._parsed = (parsed_value, spec, spec_params)
         return self._parsed[0]
 
