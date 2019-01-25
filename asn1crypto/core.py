@@ -792,7 +792,7 @@ class Void(Asn1Value):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             None
@@ -860,7 +860,7 @@ class Any(Asn1Value):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             The .native value from the parsed value object
@@ -1045,8 +1045,8 @@ class Choice(Asn1Value):
         :param name:
             The name of the alternative to be set - used with value.
             Alternatively this may be a dict with a single key being the name
-            and the value being the value, or a two-element tuple of the the
-            name and the value.
+            and the value being the value, or a two-element tuple of the name
+            and the value.
 
         :param value:
             The alternative value to set - used with name
@@ -1162,7 +1162,7 @@ class Choice(Asn1Value):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             The .native value from the contained value object
@@ -1761,7 +1761,7 @@ class AbstractString(Constructable, Primitive):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             A unicode string or None
@@ -1812,7 +1812,7 @@ class Boolean(Primitive):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             True, False or None
@@ -1891,7 +1891,7 @@ class Integer(Primitive, ValueMap):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             An integer or None
@@ -2144,8 +2144,8 @@ class BitString(Constructable, Castable, Primitive, ValueMap, object):
         """
 
         extra_bits = int_from_bytes(self.contents[0:1])
-        bit_string = '{0:b}'.format(int_from_bytes(self.contents[1:]))
         byte_len = len(self.contents[1:])
+        bit_string = '' if byte_len == 0 else '{0:b}'.format(int_from_bytes(self.contents[1:]))
         bit_len = len(bit_string)
 
         # Left-pad the bit string to a byte multiple to ensure we didn't
@@ -2168,7 +2168,7 @@ class BitString(Constructable, Castable, Primitive, ValueMap, object):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             If a _map is set, a set of names, or if no _map is set, a tuple of
@@ -2271,7 +2271,7 @@ class OctetBitString(Constructable, Castable, Primitive):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             A byte string or None
@@ -2346,7 +2346,7 @@ class IntegerBitString(Constructable, Castable, Primitive):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             An integer or None
@@ -2433,7 +2433,7 @@ class OctetString(Constructable, Castable, Primitive):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             A byte string or None
@@ -2484,7 +2484,7 @@ class IntegerOctetString(Constructable, Castable, Primitive):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             An integer or None
@@ -2611,7 +2611,7 @@ class ParsableOctetString(Constructable, Castable, Primitive):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             A byte string or None
@@ -2725,7 +2725,7 @@ class Null(Primitive):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             None
@@ -2919,7 +2919,7 @@ class ObjectIdentifier(Primitive, ValueMap):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             A unicode string or None. If _map is not defined, the unicode string
@@ -3015,7 +3015,7 @@ class Enumerated(Integer):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             A unicode string or None
@@ -3527,7 +3527,10 @@ class Sequence(Asn1Value):
         is_any = issubclass(field_spec, Any)
 
         if issubclass(value_spec, Choice):
-            if not isinstance(value, Asn1Value):
+            is_asn1value = isinstance(value, Asn1Value)
+            is_tuple = isinstance(value, tuple) and len(value) == 2
+            is_dict = isinstance(value, dict) and len(value) == 1
+            if not is_asn1value and not is_tuple and not is_dict:
                 raise ValueError(unwrap(
                     '''
                     Can not set a native python value to %s, which has the
@@ -3536,6 +3539,8 @@ class Sequence(Asn1Value):
                     field_name,
                     type_name(value_spec)
                 ))
+            if is_tuple or is_dict:
+                value = value_spec(value)
             if not isinstance(value, value_spec):
                 wrapper = value_spec()
                 wrapper.validate(value.class_, value.tag, value.contents)
@@ -3701,6 +3706,7 @@ class Sequence(Asn1Value):
                 index += 1
 
         except (ValueError, TypeError) as e:
+            self.children = None
             args = e.args[1:]
             e.args = (e.args[0] + '\n    while parsing %s' % type_name(self),) + args
             raise e
@@ -3747,7 +3753,7 @@ class Sequence(Asn1Value):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             An OrderedDict or None. If an OrderedDict, all child values are
@@ -3772,6 +3778,7 @@ class Sequence(Asn1Value):
                         name = str_cls(index)
                     self._native[name] = child.native
             except (ValueError, TypeError) as e:
+                self._native = None
                 args = e.args[1:]
                 e.args = (e.args[0] + '\n    while parsing %s' % type_name(self),) + args
                 raise e
@@ -4204,6 +4211,7 @@ class SequenceOf(Asn1Value):
                         child._parse_children(recurse=True)
                 self.children.append(child)
         except (ValueError, TypeError) as e:
+            self.children = None
             args = e.args[1:]
             e.args = (e.args[0] + '\n    while parsing %s' % type_name(self),) + args
             raise e
@@ -4222,7 +4230,7 @@ class SequenceOf(Asn1Value):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             A list or None. If a list, all child values are recursively
@@ -4574,7 +4582,7 @@ class AbstractTime(AbstractString):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             A datetime.datetime object in the UTC timezone or None
@@ -4916,7 +4924,7 @@ def _build_id_tuple(params, spec):
         A 2-element integer tuple in the form (class_, tag)
     """
 
-    # Handle situations where the the spec is not known at setup time
+    # Handle situations where the spec is not known at setup time
     if spec is None:
         return (None, None)
 
@@ -5078,8 +5086,10 @@ def _build(class_, method, tag, header, contents, trailer, spec=None, spec_param
                     ))
                 info, _ = _parse(to_parse, len(to_parse))
                 parsed_class, parsed_method, parsed_tag, parsed_header, to_parse, parsed_trailer = info
-                explicit_header += parsed_header
-                explicit_trailer = parsed_trailer + explicit_trailer
+
+                if not isinstance(value, Choice):
+                    explicit_header += parsed_header
+                    explicit_trailer = parsed_trailer + explicit_trailer
 
             value = _build(*info, spec=spec, spec_params={'no_explicit': True})
             value._header = explicit_header

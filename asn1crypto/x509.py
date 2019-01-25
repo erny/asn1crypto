@@ -163,7 +163,7 @@ class URI(IA5String):
         if not isinstance(other, URI):
             return False
 
-        return iri_to_uri(self.native) == iri_to_uri(other.native)
+        return iri_to_uri(self.native, True) == iri_to_uri(other.native, True)
 
     def __unicode__(self):
         """
@@ -377,7 +377,7 @@ class IPAddress(OctetString):
     @property
     def native(self):
         """
-        The a native Python datatype representation of this value
+        The native Python datatype representation of this value
 
         :return:
             A unicode string or None
@@ -2578,6 +2578,22 @@ class Certificate(Sequence):
         if self._issuer_serial is None:
             self._issuer_serial = self.issuer.sha256 + b':' + str_cls(self.serial_number).encode('ascii')
         return self._issuer_serial
+
+    @property
+    def not_valid_after(self):
+        """
+        :return:
+            A datetime of latest time when the certificate is still valid
+        """
+        return self['tbs_certificate']['validity']['not_after'].native
+
+    @property
+    def not_valid_before(self):
+        """
+        :return:
+            A datetime of the earliest time when the certificate is valid
+        """
+        return self['tbs_certificate']['validity']['not_before'].native
 
     @property
     def authority_key_identifier(self):

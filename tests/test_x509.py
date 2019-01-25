@@ -176,6 +176,20 @@ class X509Tests(unittest.TestCase):
         self.assertEqual('https://example.com', u.__unicode__())
         self.assertEqual(b'\x16\x13https://example.com', u.dump())
 
+    def test_uri_no_normalization(self):
+        u = x509.URI('https://example.com/')
+        self.assertEqual('https://example.com/', u.native)
+        self.assertEqual('https://example.com/', u.__unicode__())
+        self.assertEqual(b'\x16\x14https://example.com/', u.dump())
+        u2 = x509.URI('https://example.com')
+        self.assertEqual('https://example.com', u2.native)
+        self.assertEqual('https://example.com', u2.__unicode__())
+        self.assertEqual(b'\x16\x13https://example.com', u2.dump())
+        u3 = x509.URI('https://example.com:443/')
+        self.assertEqual('https://example.com:443/', u3.native)
+        self.assertEqual('https://example.com:443/', u3.__unicode__())
+        self.assertEqual(b'\x16\x18https://example.com:443/', u3.dump())
+
     def test_indef_uri(self):
         u = x509.URI.load(b'\x36\x80\x16\x07https:/\x16\x07/exampl\x16\x05e.com\x00\x00')
         self.assertEqual('https://example.com', u.native)
@@ -3390,3 +3404,9 @@ class X509Tests(unittest.TestCase):
             '{}',
             x509.DirectoryString.load(b'\x14\x02{}').native
         )
+
+    def test_validity_after_before(self):
+        cert = self._load_cert("keys/test-validity.crt")
+
+        self.assertEqual(cert.not_valid_after, datetime(2118, 1, 28, 12, 27, 39, tzinfo=util.timezone.utc))
+        self.assertEqual(cert.not_valid_before, datetime(2018, 2, 21, 12, 27, 39, tzinfo=util.timezone.utc))
